@@ -25,8 +25,22 @@ This is a simple URL Shortener API built with Golang and Gin framework. This pro
    go mod tidy
    ```
 
-3. **Run the Server**:
-   By default, the server will run on port `8080`:
+
+3. Create a `.env` file (optional) for environment variables, or use command-line flags.
+
+   Example `.env` file:
+
+   ```
+   PORT=8080
+   HOST=http://127.0.0.1/
+   REDIS_URL=localhost
+   REDIS_PORT=6379
+   REDIS_PASSWORD=your_redis_password
+   CACHE_DURATION=60
+   DEBUG_MODE=true
+   ```
+
+4. **Run the Server**:
 
    ```bash
    make run
@@ -36,12 +50,27 @@ This is a simple URL Shortener API built with Golang and Gin framework. This pro
    go run cmd/main.go
    ```
 
-4. **Use a Custom Port**:
-   To specify a custom port, pass the `-port` argument:
+   The server will start on the configured port (default: `8080`).
 
-   ```bash
-   go run cmd/main.go -port 2048
-   ```
+### Configuration
+
+You can configure the application in the following ways:
+
+- **Environment variables**: Define configuration values in the `.env` file (or environment variables).
+- **Command-line flags**: Override values when running the application (e.g., `-port 9090`).
+- **Default values**: If not set, the application will use default values.
+
+The following environment variables/flags are supported:
+
+- `PORT` - The port to run the API on (default: `8080`).
+- `HOST` - The base URL for the API (default: `http://127.0.0.1/`).
+- `REDIS_URL` - The Redis server URL (default: `localhost`).
+- `REDIS_PORT` - The Redis port (default: `6379`).
+- `REDIS_PASSWORD` - The Redis password (default: empty).
+- `CACHE_DURATION` - The duration in minutes for URL cache expiry (default: `60`).
+- `DEBUG_MODE` - Set to `true` to enable debug mode (default: `false`).
+
+
 
 ## API Endpoints
 
@@ -65,21 +94,20 @@ This is a simple URL Shortener API built with Golang and Gin framework. This pro
 - **Method**: `POST`
 - **Description**: Creates a short URL for a given long URL.
 
-**Request Body**:
+- **Request body**:
+  ```json
+  {
+    "url": "https://www.example.com"
+  }
+  ```
 
-```json
-{
-    "url": "https://example.com"
-}
-```
-
-**Sample Response**:
-
-```json
-{
-    "shortUrl": "abc123"
-}
-```
+- **Response**:
+  ```json
+  {
+    "message": "short url created successfully",
+    "short_url": "http://localhost:8080/abc12345"
+  }
+  ```
 
 ### 3. **Redirect Short URL**
 
@@ -89,6 +117,39 @@ This is a simple URL Shortener API built with Golang and Gin framework. This pro
 
 **Behavior**: If the `shortUrl` exists, it redirects to the `longUrl`. Otherwise, it returns an error.
 
+
+### Example Usage
+
+1. **Create a short URL**:
+   ```bash
+   curl -X POST -H "Content-Type: application/json" -d '{"url": "https://www.example.com"}' http://localhost:8080/create-short-url
+   ```
+
+2. **Redirect to the original URL**:
+   After creating a short URL, visit it in a browser or use curl to test the redirection:
+   ```bash
+   curl -L http://localhost:8080/abc12345
+   ```
+
+### Error Handling
+
+- If the input URL is missing or invalid, the server will return a `400 Bad Request` with an error message.
+- If the short URL does not exist, the server will return a `404 Not Found`.
+
+### Testing
+
+You can run tests for the project using Go's built-in testing tools.
+
+```bash
+go test ./...
+```
+
+or 
+
+```bash
+make test
+```
+
 ## Generating UUID from User IP
 
 This project includes a demonstration feature where UUIDs are generated based on the user's IP address. This is shown as an educational example.
@@ -96,6 +157,12 @@ This project includes a demonstration feature where UUIDs are generated based on
 ## Contributing
 
 Feel free to contribute to this project by submitting issues or pull requests. This project is intended for educational purposes, so any improvements or suggestions are welcome.
+
+### License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
 
 ## Author
 
