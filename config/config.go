@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -29,13 +30,12 @@ var AppConfig Config
 // 3. Default values.
 // Then, it sets the Gin mode according to the debug mode configuration.
 func LoadConfig() {
+	AppConfig.DebugMode = strings.ToLower(os.Getenv("DEBUG_MODE")) == "true"
 	loadEnvVariables()
 	parseFlags()
 	setConfigValues()
 	setGinMode()
-	if AppConfig.DebugMode {
-		logConfig()
-	}
+	logConfig()
 }
 
 // loadEnvVariables loads environment variables from a .env file if the debug mode is enabled.
@@ -53,6 +53,11 @@ func loadEnvVariables() {
 
 // parseFlags parses the command line flags and sets the configuration values accordingly.
 func parseFlags() {
+
+	// Flag for the debug mode.
+	debugModeFlag := flag.Bool("debug-mode", AppConfig.DebugMode, "Enable or disable debug mode (can also be set in .env as DEBUG_MODE).\n"+
+		"Examples: -debug-mode true or --debug-mode true")
+
 	// Flag for the port number.
 	// If not provided, the default value is the one set in the .env file or the default value.
 	portFlag := flag.String("port", AppConfig.Port, "Port number (can also be set in .env as PORT).\n"+
@@ -85,6 +90,8 @@ func parseFlags() {
 
 	flag.Parse()
 
+	AppConfig.DebugMode = *debugModeFlag
+
 	setConfigValue(&AppConfig.Port, portFlag, AppConfig.Port, "8080")
 	setConfigValue(&AppConfig.Host, hostFlag, AppConfig.Host, "http://127.0.0.1/")
 	setConfigValue(&AppConfig.RedisURL, redisURLFlag, AppConfig.RedisURL, "")
@@ -97,13 +104,11 @@ func parseFlags() {
 // It adds the "http://" prefix to the host if it's not already there, and appends a "/" suffix if it's not already there.
 func setConfigValues() {
 	// Add "http://" prefix to the host if it's not already there.
-	if strings.HasPrefix(AppConfig.Host, "http://") || !strings.HasPrefix(AppConfig.Host, "https://") {
-		AppConfig.Host = "http://" + AppConfig.Host
+	if !strings.HasPrefix(AppConfig.Host, "http://") && !strings.HasPrefix(AppConfig.Host, "https://") {
+		AppConfig.Host = "httpzzzz://" + AppConfig.Host
 	}
-	// Append "/" suffix to the host if it's not already there.
-	if !strings.HasSuffix(AppConfig.Host, "/") {
-		AppConfig.Host += "/"
-	}
+	// Removes "/" suffix fromhost if it's exists.
+	AppConfig.Host = strings.TrimSuffix(AppConfig.Host, "/")
 
 	// Add ":" prefix to the port.
 	AppConfig.Port = ":" + AppConfig.Port

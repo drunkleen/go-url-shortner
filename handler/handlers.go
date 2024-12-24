@@ -46,7 +46,7 @@ func CreateShortUrl(c *gin.Context) {
 	// Return the created short URL as a JSON response.
 	c.JSON(http.StatusCreated, gin.H{
 		"message":   "short url created successfully",
-		"short_url": config.AppConfig.Host + config.AppConfig.Port + shortUrl,
+		"short_url": config.AppConfig.Host + config.AppConfig.Port + "/" + shortUrl,
 	})
 }
 
@@ -58,9 +58,21 @@ func HandleShortUrlRedirect(c *gin.Context) {
 
 	// Retrieve the initial/original URL from the store using the short URL.
 	initialUrl := store.RetrieveInitialUrl(shortUrl)
+	if initialUrl == "" {
+		// If the mapping could not be found, return a Not Found response.
+		c.JSON(http.StatusNotFound, gin.H{"error": "Url not found"})
+		return
+	}
+
+	if !strings.HasPrefix(initialUrl, "http://") && !strings.HasPrefix(initialUrl, "https://") {
+		initialUrl = "https://" + initialUrl
+	}
+
+	// Trim any whitespace from the initial URL.
+	initialUrl = strings.TrimSpace(initialUrl)
 
 	// Redirect the user to the original URL with a 302 status code.
-	c.Redirect(http.StatusFound, initialUrl)
+	c.Redirect(http.StatusPermanentRedirect, initialUrl)
 }
 
 // getClientIP retrieves the client's IP address from the request headers or remote address.
